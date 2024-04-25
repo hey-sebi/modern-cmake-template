@@ -4,14 +4,13 @@
 
 cmake_minimum_required(VERSION 3.14)
 
-set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 1)
-set(PROJECT_VERSION_PATCH 0)
-set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+include(cmake/version.cmake)
+
+parse_version()
 
 project(replace-me
   LANGUAGES C CXX
-  VERSION ${PROJECT_VERSION}
+  VERSION ${REPLACE_ME_VERSION}
 )
 
 
@@ -84,7 +83,7 @@ endif()
 # ---------------------------------------------------------------------------
 
 message(STATUS "----------------------------------------------------------------------")
-message(STATUS "Building ${CMAKE_PROJECT_NAME} in version ${PROJECT_VERSION}")
+message(STATUS "Building ${CMAKE_PROJECT_NAME} in version ${CMAKE_PROJECT_VERSION}")
 message(STATUS " C++ standard:       ${CMAKE_CXX_STANDARD}")
 message(STATUS " Installing enabled: ${ENABLE_INSTALL}")
 message(STATUS " Unit tests enabled: ${ENABLE_TESTING}")
