@@ -113,7 +113,7 @@ list(APPEND INSTALL_TARGETS hello)
 #  Unit tests
 # ===========================================================================
 
-if(BUILD_TESTING)
+if(ENABLE_TESTING)
   add_subdirectory(test)
 endif()
 
