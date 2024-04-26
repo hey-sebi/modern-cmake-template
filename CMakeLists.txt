@@ -4,13 +4,14 @@
 
 cmake_minimum_required(VERSION 3.14)
 
+# Provides the version from the version header
 include(cmake/version.cmake)
-
 parse_version()
 
-project(replace-me
+project(replaceme
   LANGUAGES C CXX
-  VERSION ${REPLACE_ME_VERSION}
+  # Set the version in the version header
+  VERSION ${REPLACEME_VERSION}
 )
 
 
