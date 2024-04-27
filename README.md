@@ -1,4 +1,4 @@
-# modern-cmake-template
+# Modern CMake Template
 Template for starting a C/C++ CMake project.
 
 ## Feature summary
@@ -11,7 +11,7 @@ Template for starting a C/C++ CMake project.
 * Directory structure prepared for typical use cases
 * Example setup for
   * a hello world program
-  * finding external packages
+  * finding external packages like Boost
   * generating unit tests
 
 ## Goal of the template
