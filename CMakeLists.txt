@@ -124,12 +124,40 @@ endif()
 
 if(ENABLE_INSTALL)
 
-  install(TARGETS
-    ${INSTALL_TARGETS}
+  # Install targets and define the export targets.
+  install(
+    TARGETS ${INSTALL_TARGETS}
+    EXPORT replacemeTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+  # Define the replacemeTargets.cmake file and the namespace for exported targets.
+  install(
+    EXPORT replacemeTargets
+    FILE replacemeTargets.cmake
+    NAMESPACE replaceme::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/replaceme
+  )
+
+  include(CMakePackageConfigHelpers)
+  # Generate a replacemeConfigVersion.cmake file.
+  # Preconfigured is a compatibility of 'SameMajorVersion'. Adjust this to your needs.
+  # https://cmake.org/cmake/help/latest/module/CMakePackageConfigHelpers.html#generating-a-package-version-file
+  write_basic_package_version_file(
+    "replacemeConfigVersion.cmake"
+    VERSION ${REPLACEME_VERSION}
+    COMPATIBILITY SameMajorVersion
+  )
+
+  # Install the config files.
+  install(
+    FILES
+    "replacemeConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/replacemeConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/replaceme
   )
 
 endif()
-

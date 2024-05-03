@@ -38,8 +38,13 @@ if (-not (Test-Path (Join-Path $working_dir ".git"))) {
 
 # replace file contents
 Replace-InFile "CMakeLists.txt"
+Replace-InFile "replacemeConfig.cmake"
 Replace-InFile "cmake/version.cmake"
 Replace-InFile "include/replaceme/version.h"
+
+# rename files
+Write-Host "Renaming replacemeConfig.cmake"
+Move-Item replacemeConfig.cmake -Destination ("${project_name}Config.cmake")
 
 # rename directories
 Write-Host "Renaming include/replaceme/"

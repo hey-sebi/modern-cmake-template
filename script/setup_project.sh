@@ -49,12 +49,17 @@ project_name="$1"
 
 # replace file contents
 replace_in_file "CMakeLists.txt"
+replace_in_file "replacemeConfig.cmake"
 replace_in_file "cmake/version.cmake"
 replace_in_file "include/replaceme/version.h"
 
+# rename files
+echo "Renaming replacemeConfig.cmake"
+mv replacemeConfig.cmake ${project_name}Config.cmake
 # rename directories
-echo "renaming include/replaceme/"
+echo "Renaming include/replaceme/"
 mv ./include/replaceme/ ./include/$project_name
+
 
 echo "Replacement completed."
 
