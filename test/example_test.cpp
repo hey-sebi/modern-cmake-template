@@ -1,16 +1,12 @@
 #include <gtest/gtest.h>
+#include <replaceme/replaceme.h>
 
-
-/// Calculates the sum of two the integers @p a and @p b
-int Sum(int a, int b)
-{
-  return a + b;
+TEST(ReplacemeTest, TestGreeting) {
+  EXPECT_EQ(replaceme::get_greeting(), "Hello from replaceme!");
 }
 
-
-TEST(ExampleTest, TestSum)
-{
-  const int a = 2;
-  const int b = 4;
-  EXPECT_EQ(Sum(a, b), a + b);
+TEST(ReplacemeTest, TestAdd) {
+  EXPECT_EQ(replaceme::add(2, 3), 5);
+  EXPECT_EQ(replaceme::add(-1, 1), 0);
+  EXPECT_EQ(replaceme::add(0, 0), 0);
 }
