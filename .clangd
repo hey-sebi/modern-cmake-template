@@ -1,0 +1,38 @@
+# Clangd configuration file
+# Documentation: https://clangd.llvm.org/config
+
+CompileFlags:
+  # Directory containing compile_commands.json (produced by cmake --preset default)
+  CompilationDatabase: build/default
+
+  # Fallback compiler flags when compile_commands.json is not yet generated
+  Add:
+    - -std=c++17
+    - -Wall
+    - -Wextra
+
+Diagnostics:
+  # Unused include detection (Strict flags headers whose symbols are not directly used)
+  UnusedIncludes: Strict
+
+  # Enable clang-tidy checks directly in the LSP
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - modernize-*
+      - performance-*
+      - readability-*
+    Remove:
+      - modernize-use-trailing-return-type # Optional: preference-dependent
+      - readability-magic-numbers         # Can be noisy in tests
+
+# Inlay hints configuration for modern editor support
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  Designators: Yes
+
+# Background indexing enables cross-file navigation across the entire codebase
+Index:
+  Background: Build

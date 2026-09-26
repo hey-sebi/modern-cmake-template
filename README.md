@@ -127,6 +127,7 @@ ctest --test-dir build --output-on-failure
 │   ├── CMakeLists.txt     # Test target & FetchContent GTest
 │   └── example_test.cpp   # Sample unit tests
 ├── .clang-format          # Formatting rules
+├── .clangd                # Clangd LSP configuration
 ├── CMakeLists.txt         # Root CMakeLists
 └── CMakePresets.json      # Standard build & test presets
 ```

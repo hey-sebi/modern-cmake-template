@@ -155,6 +155,7 @@ ctest --test-dir build --output-on-failure
 ├── include/$project_name/  # Public headers
 ├── src/                  # Library sources and CLI entrypoint
 ├── test/                 # GoogleTest unit tests (auto-fetched)
+├── .clangd               # Clangd LSP configuration
 ├── CMakeLists.txt        # Root CMake configuration
 └── CMakePresets.json     # Standardized build presets
 \`\`\`
