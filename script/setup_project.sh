@@ -1,69 +1,208 @@
-#!/bin/bash
-
-#  Usage: setup_project.sh <your_project_name>
-#         or
-#         setup_project.sh --help
+#!/usr/bin/env bash
+#  Usage: setup_project.sh [<project_name>] [--cleanup] [--no-git]
 #
 #  This script must be run on the repository's top level directory.
-#  It replaces file names, directory names and strings in files that match the string
-#  "replaceme" in a case preserving manner.
-#  It also deletes the .git directory to make room for your own source code versioning.
+#  It configures the template for your new project:
+#  - Replaces "replaceme" / "REPLACEME" / "Replaceme" across all project files.
+#  - Renames files and directories to match your project name.
+#  - Generates a fresh, project-specific README.md.
+#  - Re-initializes a clean Git repository with an initial commit.
+#  - Offers to clean up the setup scripts.
 
-# Get the absolute path of the script directory
-working_dir=$(pwd)
+set -euo pipefail
 
-# Check if script is run in the top-level directory of a Git repository
-if [ "$(git -C "$working_dir" rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]; then
-    echo "Error: This script must be run within a Git repository's top-level directory."
+if [ ! -f "CMakeLists.txt" ]; then
+    echo "Error: This script must be run from the repository root directory (where CMakeLists.txt is located)."
     exit 1
 fi
 
-# Check if project name is provided
-if [ -z "$1" ]; then
-    echo "Usage: $0 <project_name>"
+project_name=""
+cleanup=false
+no_git=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --cleanup)
+            cleanup=true
+            ;;
+        --no-git)
+            no_git=true
+            ;;
+        -h|--help|help)
+            echo "Usage: $0 [<project_name>] [--cleanup] [--no-git]"
+            exit 0
+            ;;
+        *)
+            if [ -z "$project_name" ]; then
+                project_name="$arg"
+            fi
+            ;;
+    esac
+done
+
+if [ -z "$project_name" ]; then
+    read -rp "Enter your project name (lowercase, no spaces, e.g. 'myproject'): " project_name
+fi
+
+if [ -z "$project_name" ]; then
+    echo "Error: Project name cannot be empty."
     exit 1
 fi
 
-if [ $1 == "help" ]  || [ $1 == "--help" ] || [ $1 == "-h" ]; then
-    echo "Usage: $0 <project_name>"
-    echo ""
-    echo "This script must be run on the repository's top level directory."
-    echo "It replaces file names, directory names and strings in files that match the string"
-    echo "\"replaceme\" in a case preserving manner."
-    echo "It also deletes the .git directory to make room for your own source code versioning."
-    exit 0
-fi
+project_upper=$(echo "$project_name" | tr '[:lower:]' '[:upper:]')
+project_title="$(tr '[:lower:]' '[:upper:]' <<< "${project_name:0:1}")${project_name:1}"
 
-# Replaces all template strings in a file.
-# Expects one parameter: the filename.
+echo "Configuring template for project: $project_name..."
+
 replace_in_file() {
-    local filename="$1"
-    echo "Replacing lowercase occurrances in $filename"
-    sed -i "s/replaceme/$project_name/g" "$filename"
-    echo "Replacing uppercase occurrances in $filename"
-    sed -i "s/REPLACEME/${project_name^^}/g" "$filename"
+    local file="$1"
+    if [ -f "$file" ]; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/replaceme/$project_name/g" "$file"
+            sed -i '' "s/REPLACEME/$project_upper/g" "$file"
+            sed -i '' "s/Replaceme/$project_title/g" "$file"
+        else
+            sed -i "s/replaceme/$project_name/g" "$file"
+            sed -i "s/REPLACEME/$project_upper/g" "$file"
+            sed -i "s/Replaceme/$project_title/g" "$file"
+        fi
+    fi
 }
 
-# Get project name from command line argument
-project_name="$1"
+files_to_update=(
+    "CMakeLists.txt"
+    "CMakePresets.json"
+    "replacemeConfig.cmake"
+    "cmake/version.cmake"
+    "cmake/warnings.cmake"
+    "cmake/format.cmake"
+    "include/replaceme/version.h"
+    "include/replaceme/replaceme.h"
+    "src/replaceme.cpp"
+    "src/main.cpp"
+    "test/CMakeLists.txt"
+    "test/example_test.cpp"
+    ".github/workflows/ci.yml"
+)
 
-# replace file contents
-replace_in_file "CMakeLists.txt"
-replace_in_file "replacemeConfig.cmake"
-replace_in_file "cmake/version.cmake"
-replace_in_file "include/replaceme/version.h"
+for file in "${files_to_update[@]}"; do
+    replace_in_file "$file"
+done
 
-# rename files
-echo "Renaming replacemeConfig.cmake"
-mv replacemeConfig.cmake ${project_name}Config.cmake
-# rename directories
-echo "Renaming include/replaceme/"
-mv ./include/replaceme/ ./include/$project_name
+# Rename files
+echo "Renaming files..."
+if [ -f "replacemeConfig.cmake" ]; then
+    mv replacemeConfig.cmake "${project_name}Config.cmake"
+fi
 
+if [ -f "include/replaceme/replaceme.h" ]; then
+    mv include/replaceme/replaceme.h "include/replaceme/${project_name}.h"
+fi
 
-echo "Replacement completed."
+if [ -f "src/replaceme.cpp" ]; then
+    mv src/replaceme.cpp "src/${project_name}.cpp"
+fi
 
-echo "Deleting repository git information"
-rm -rf ".git"
+# Rename include directory
+if [ -d "include/replaceme" ]; then
+    mv include/replaceme "include/${project_name}"
+fi
 
-echo "Done. Happy coding!"
+# Generate clean README.md
+echo "Generating project README.md..."
+cat << EOF > README.md
+# $project_title
+
+A modern C++ project.
+
+## Requirements
+
+- CMake 3.19 or higher
+- C++17 compatible compiler (GCC, Clang, or MSVC)
+- Ninja or Make (optional, recommended)
+
+## Building & Testing
+
+### Using CMake Presets (Recommended)
+
+Configure:
+\`\`\`console
+cmake --preset default
+\`\`\`
+
+Build:
+\`\`\`console
+cmake --build --preset default
+\`\`\`
+
+Run tests:
+\`\`\`console
+ctest --preset default
+\`\`\`
+
+### Manual Build
+
+\`\`\`console
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+ctest --test-dir build --output-on-failure
+\`\`\`
+
+## Project Structure
+
+\`\`\`
+├── cmake/                # CMake modules (warnings, format, version)
+├── include/$project_name/  # Public headers
+├── src/                  # Library sources and CLI entrypoint
+├── test/                 # GoogleTest unit tests (auto-fetched)
+├── CMakeLists.txt        # Root CMake configuration
+└── CMakePresets.json     # Standardized build presets
+\`\`\`
+
+## Code Formatting
+
+\`\`\`console
+cmake --build --preset default --target format
+\`\`\`
+
+## Configuration Options
+
+| Option | Default | Description |
+| :--- | :--- | :--- |
+| \`ENABLE_TESTING\` | \`ON\` | Builds unit tests using GoogleTest & CTest |
+| \`USE_SYSTEM_GTEST\` | \`OFF\` | Uses system-installed GoogleTest instead of FetchContent |
+| \`ENABLE_INSTALL\` | \`ON\` | Generates install and package config export targets |
+| \`ENABLE_CCACHE\` | \`ON\` | Uses CCache if available on system PATH |
+| \`ENABLE_WARNINGS_AS_ERRORS\` | \`OFF\` | Treats compiler warnings as fatal errors |
+| \`BUILD_SHARED_LIBS\` | \`OFF\` | Builds library as shared (\`.so\`/\`.dll\`) instead of static |
+EOF
+
+# Reset Git repository
+if [ "$no_git" = false ]; then
+    echo "Re-initializing fresh Git repository..."
+    rm -rf ".git"
+    git init -b main
+    git add .
+    git commit -m "Initial commit for $project_name"
+    echo "Git repository initialized on branch 'main'."
+fi
+
+# Self-cleanup option
+if [ "$cleanup" = false ] && [ -t 0 ]; then
+    read -rp "Do you want to delete the setup scripts now? [Y/n] " reply
+    if [[ -z "$reply" || "$reply" =~ ^[yY] ]]; then
+        cleanup=true
+    fi
+fi
+
+if [ "$cleanup" = true ]; then
+    echo "Cleaning up setup scripts..."
+    rm -f script/setup_project.sh script/setup_project.ps1
+    rmdir script 2>/dev/null || true
+    if [ -d ".git" ]; then
+        git add -A
+        git commit -m "Remove setup scripts" --amend --no-edit >/dev/null 2>&1 || true
+    fi
+fi
+
+echo -e "\nSetup complete! Happy coding!"
