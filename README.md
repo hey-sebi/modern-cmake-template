@@ -1,136 +1,147 @@
 # Modern CMake Template
-Template for starting a C/C++ CMake project.
 
-## Feature summary
+A modern, production-ready starter template for C/C++ projects using CMake (3.19+).
 
-*All features are optional*
+## Features
 
-* Code formatting via clang-format
-* Unit testing using CTest & Google Test
-* Faster compilation using CCache
-* Directory structure prepared for typical use cases
-* Example setup for
-  * a hello world program
-  * finding external packages like Boost
-  * generating unit tests
+- **Standard Modern CMake Architecture**:
+  - Modular target layout: Core Library (`replaceme`) + CLI Application
+    (`replaceme_cli`) + Unit Tests (`replaceme_test`).
+  - Target include directories separated cleanly via `$<BUILD_INTERFACE:...>` and
+    `$<INSTALL_INTERFACE:...>`.
+  - Namespaced alias targets (`replaceme::replaceme`).
+- **CMake Presets (`CMakePresets.json`)**:
+  - Pre-configured `relwithdebinfo` (default), `debug`, and `release` presets for
+    configure, build, and test steps.
+  - Native integration with Visual Studio, CLion, and the command line.
+- **Zero-Friction Unit Testing**:
+  - Automated dependency fetching with `FetchContent` for
+    [Google Test](https://github.com/google/googletest) (no system installation required).
+  - Test discovery via CTest (`gtest_discover_tests`).
+- **Strict Warnings & Analysis**:
+  - Modular compiler warnings (`cmake/warnings.cmake`) for MSVC, GCC, and Clang.
+  - Optional `ENABLE_WARNINGS_AS_ERRORS` flag.
+- **Code Formatting**:
+  - Clang-format configuration (`.clang-format`) with Google style.
+  - Built-in CMake targets: `format` and `format-check`.
+- **Packaging & Installation**:
+  - CMake package export (`<Project>Config.cmake`, `<Project>ConfigVersion.cmake`,
+    `<Project>Targets.cmake`).
+  - GNU standard directory installation (`GNUInstallDirs`).
+- **Continuous Integration**:
+  - Multi-platform GitHub Actions workflow (`.github/workflows/ci.yml`) testing Linux
+    (GCC/Clang), Windows (MSVC), and macOS.
+- **End-to-End Setup Script**:
+  - Renames all tokens, files, and directories.
+  - Generates a fresh project README.
+  - Automatically re-initializes Git with a clean initial commit.
+  - Cleans up setup scripts automatically.
 
-## Goal of the template
+---
 
-Goal of all this is to provide a starting point for a C/C++ CMake projekt and to
-reduce repetitive boilerplate that is necessary every time a new project is started. The
-template aims to be configurable for your needs and provides examples for e.g. finding
-packages or adding CMake targets. Some parts can simply be activated by uncommenting the
-code, others can be enabled or disabled in a config section / by passing some arguments
-when calling cmake.
+## Quick Start / Setup
 
-Feel free to use the template and adjust it to your needs.
+1. **Clone this repository**:
 
-
-## Template values
-
-The template uses `replaceme` as indicator that this file / directory / string should be
-yet replaced by your project name. You don't have to do that manually, there are scripts
-that can do that. See [Installation](#installation).
-
-## Directory structure
-
-The following directories are already available for the purposes shown below:
-
-```
-├── ci/                   # For continuous integration files
-├── cmake/                # For CMake macros / scripts
-├── doc/                  # For documentation
-├── example/              # For example programs
-├── script/               # For utility bash/powershell scripts
-├── include/
-│     └── replaceme/      # For public header files
-├── src/                  # For .cpp files and private headers
-└── test/                 # For unit tests
-```
-
-## Installation
-
-1. Clone this repository into an empty directory:<br>
-   Using HTTPS: <br>
    ```console
-   $ git clone https://github.com/hey-sebi/modern-cmake-template.git
-   ```
-   Using SSH: <br>
-   ```console
-   $ git clone git@github.com:hey-sebi/modern-cmake-template.git
-   ```
-1. Use a script matching your operating system in order to replace template values /
-   directory names with the name of your project. These scripts will ask you for the
-   project name and also delete the `.git` directory so that you can setup your own
-   version control.<br>
-   From the repository root directory run<br>
-   * on Linux/MacOS<br>
-   ```console
-   $ ./script/setup_project.sh <yourprojectname>`
-   ```
-   * on Windows<br>
-   ```console
-   $ ./script/setup_project.ps1 <yourprojectname>`
+   git clone https://github.com/hey-sebi/modern-cmake-template.git my-awesome-project
+   cd my-awesome-project
    ```
 
-   *You should use a project name without spaces here.*
-1. Delete the `script/setup_project.*` files as you probably don't need them anymore.
+2. **Run the setup script**:
+   - **Linux / macOS**:
 
-## General usage
+     ```console
+     ./script/setup_project.sh myproject
+     ```
 
-### Example programs
-The repository contains a simple "hello world" program that you can use to test if
-  compilation works or as example on how to build an executable. See `src` directory.
+   - **Windows (PowerShell)**:
 
-In addition there is an example unit test in the `test` directory.
+     ```console
+     ./script/setup_project.ps1 myproject
+     ```
 
-### Versioning
-There is a version header file `version.h` which defines the project's version according
-  to a semantic versioning scheme (see also https://semver.org/). This way, you can use
-  the version number in your code, e.g. for logging or similar. Simply change the numbers
-  in this file to modify the version of the project.
+   The script will:
+   - Replace template names across all project files.
+   - Rename headers and source files to match your project.
+   - Generate a clean project `README.md`.
+   - Initialize a fresh Git repository on branch `main` with an initial commit.
+   - Offer to delete the setup scripts.
 
-### Enabling / disabling features
+---
 
-There is a section called "Configuration" in the top-level `CMakeLists.txt` where you can
-  see different aspects that can be configured. Alternatively you can overwrite the
-  configured values by passing `-D<the-value>=off` or `-D<the-value>=on` respecively. The
-  configuration section can also be extended to contain options for your project.
+## Building and Running
 
-### Code formatting
+### Using CMake Presets (CMake 3.19+)
 
-Code formatting is setup to be used with [Clang
-Format](https://clang.llvm.org/docs/ClangFormat.html). The configuration file is
-`.clang-format` and is set to use the Google Style. Adjust it to your needs.
-
-## Getting started with CMake
-
-Skip this section if you are already familiar with CMake.
-
-To trigger CMake, a typical approach would be:
-1. Create a build directory: `mkdir build`
-2. Go to that directory: `cd build`
-3. Call CMake: `cmake ..`
-
-The `cmake` command takes the directory of a CMakeLists.txt as argument, so we provide the
-parent directory.
-
-This is called an *out of source build*, as generated files are not mixed with our source
-code but instead placed into the `build` directory, which is a good approach. You should
-always use out of source builds, as it makes a lot of things easier, e.g. you will always
-know what files to delete in order to force a 100% clean build.
-
-You can use different *generators* with CMake. If no generator is provided, CMake works
-with Makefiles. A good alternative is using [Ninja](https://ninja-build.org/). In this
-case your cmake invokation would look like this:
+Configure:
 
 ```console
-$ cmake -GNinja ..
+cmake --preset default
 ```
-Other generators exist, e.g. for some IDEs as well. More information can be found at [the
-official CMake
-website](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html).
 
-There are many CMake tutorials available online, so I won't go into detail here any
-further. A good starting point, especially regarding *modern* CMake style (available since
-CMake v3.0), is this digest: https://cliutils.gitlab.io/modern-cmake/
+Build:
+
+```console
+cmake --build --preset default
+```
+
+Run tests:
+
+```console
+ctest --preset default
+```
+
+Run the CLI app:
+
+- **Windows**: `.\build\default\Debug\replaceme_cli.exe`
+- **Linux/macOS**: `./build/default/replaceme_cli`
+
+### Manual Invocation
+
+```console
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+---
+
+## Directory Structure
+
+```
+├── .github/
+│   └── workflows/ci.yml   # Multi-platform CI pipeline
+├── cmake/
+│   ├── format.cmake       # Clang-format targets
+│   ├── version.cmake      # Semantic version parsing
+│   └── warnings.cmake    # Compiler warning presets
+├── include/
+│   └── replaceme/
+│       ├── replaceme.h    # Public library headers
+│       └── version.h      # Semantic version header
+├── src/
+│   ├── main.cpp           # CLI application entry point
+│   └── replaceme.cpp      # Library implementation
+├── test/
+│   ├── CMakeLists.txt     # Test target & FetchContent GTest
+│   └── example_test.cpp   # Sample unit tests
+├── .clang-format          # Formatting rules
+├── CMakeLists.txt         # Root CMakeLists
+└── CMakePresets.json      # Standard build & test presets
+```
+
+---
+
+## Configuration Options
+
+Configure these in `CMakeLists.txt` or via `-D<OPTION>=<ON|OFF>`:
+
+| Option                      | Default | Description                                               |
+| :-------------------------- | :------ | :-------------------------------------------------------- |
+| `ENABLE_TESTING`            | `ON`    | Builds unit tests using GoogleTest & CTest                |
+| `USE_SYSTEM_GTEST`          | `OFF`   | Uses system-installed GoogleTest instead of FetchContent  |
+| `ENABLE_INSTALL`            | `ON`    | Generates install and package config export targets       |
+| `ENABLE_CCACHE`             | `ON`    | Uses CCache if available on system PATH                   |
+| `ENABLE_WARNINGS_AS_ERRORS` | `OFF`   | Treats compiler warnings as fatal errors                  |
+| `BUILD_SHARED_LIBS`         | `OFF`   | Builds library as shared (`.so`/`.dll`) instead of static |
