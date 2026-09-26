@@ -1,0 +1,178 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "ENABLE_TESTING": "ON",
+        "ENABLE_INSTALL": "ON"
+      }
+    },
+    {
+      "name": "relwithdebinfo",
+      "displayName": "Release with Debug Info",
+      "description": "Optimized build with debug info",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "description": "Debug build with tests enabled",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "description": "Optimized release build",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "default",
+      "displayName": "Default",
+      "description": "Default configuration preset (RelWithDebInfo)",
+      "inherits": "relwithdebinfo"
+    },
+    {
+      "name": "ninja-relwithdebinfo",
+      "displayName": "Ninja RelWithDebInfo",
+      "description": "Ninja generator release build with debug info",
+      "generator": "Ninja",
+      "inherits": "relwithdebinfo"
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Ninja Debug",
+      "description": "Ninja generator debug build",
+      "generator": "Ninja",
+      "inherits": "debug"
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja Release",
+      "description": "Ninja generator release build",
+      "generator": "Ninja",
+      "inherits": "release"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "relwithdebinfo",
+      "displayName": "Build RelWithDebInfo",
+      "configurePreset": "relwithdebinfo"
+    },
+    {
+      "name": "debug",
+      "displayName": "Build Debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "displayName": "Build Release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "default",
+      "displayName": "Build Default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "ninja-relwithdebinfo",
+      "displayName": "Build Ninja RelWithDebInfo",
+      "configurePreset": "ninja-relwithdebinfo"
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Build Ninja Debug",
+      "configurePreset": "ninja-debug"
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Build Ninja Release",
+      "configurePreset": "ninja-release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "relwithdebinfo",
+      "displayName": "Test RelWithDebInfo",
+      "configurePreset": "relwithdebinfo",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Test Debug",
+      "configurePreset": "debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Test Release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "default",
+      "displayName": "Test Default",
+      "configurePreset": "default",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ninja-relwithdebinfo",
+      "displayName": "Test Ninja RelWithDebInfo",
+      "configurePreset": "ninja-relwithdebinfo",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Test Ninja Debug",
+      "configurePreset": "ninja-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Test Ninja Release",
+      "configurePreset": "ninja-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
