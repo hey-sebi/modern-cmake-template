@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-#  Usage: setup_project.sh [<project_name>] [--cleanup] [--no-git]
+#  Usage: setup_project.sh [<project_name>] [--cleanup] [--no-git] [--amend] [--reset-git]
 #
 #  This script must be run on the repository's top level directory.
 #  It configures the template for your new project:
 #  - Replaces "replaceme" / "REPLACEME" / "Replaceme" across all project files.
 #  - Renames files and directories to match your project name.
 #  - Generates a fresh, project-specific README.md.
-#  - Re-initializes a clean Git repository with an initial commit.
+#  - Smart Git management: preserves remote if cloned via GitHub template,
+#    or re-initializes if directly cloned from modern-cmake-template.
 #  - Offers to clean up the setup scripts.
 
 set -euo pipefail
@@ -19,6 +20,8 @@ fi
 project_name=""
 cleanup=false
 no_git=false
+amend=false
+reset_git=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -28,8 +31,14 @@ for arg in "$@"; do
         --no-git)
             no_git=true
             ;;
+        --amend)
+            amend=true
+            ;;
+        --reset-git)
+            reset_git=true
+            ;;
         -h|--help|help)
-            echo "Usage: $0 [<project_name>] [--cleanup] [--no-git]"
+            echo "Usage: $0 [<project_name>] [--cleanup] [--no-git] [--amend] [--reset-git]"
             exit 0
             ;;
         *)
@@ -178,18 +187,69 @@ cmake --build --preset default --target format
 | \`BUILD_SHARED_LIBS\` | \`OFF\` | Builds library as shared (\`.so\`/\`.dll\`) instead of static |
 EOF
 
-# Reset Git repository
+# Smart Git repository handling
 if [ "$no_git" = false ]; then
-    echo "Re-initializing fresh Git repository..."
-    rm -rf ".git"
-    git init -b main
-    git add .
-    git commit -m "Initial commit for $project_name"
-    echo "Git repository initialized on branch 'main'."
+    is_git=false
+    origin_url=""
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        is_git=true
+        origin_url=$(git remote get-url origin 2>/dev/null || echo "")
+    fi
+
+    is_template_clone=false
+    if [[ "$origin_url" =~ "modern-cmake-template" ]] || [ "$reset_git" = true ] || [ -z "$origin_url" ]; then
+        is_template_clone=true
+    fi
+
+    if [ "$is_git" = false ]; then
+        echo "Initializing fresh Git repository..."
+        git init -b main
+        git add .
+        git commit -m "Initial commit for $project_name"
+        echo "Git repository initialized on branch 'main'."
+    elif [ "$is_template_clone" = true ]; then
+        echo "Detected direct clone of modern-cmake-template. Re-initializing fresh Git repository..."
+        rm -rf ".git"
+        git init -b main
+        git add .
+        git commit -m "Initial commit for $project_name"
+        echo "Git repository initialized on branch 'main'."
+        echo ""
+        echo "To link to your own GitHub repository:"
+        echo "  git remote add origin <your-repo-url>"
+        echo "  git push -u origin main"
+    else
+        echo "Detected user repository cloned from GitHub template (origin: $origin_url)."
+        echo "Preserving remote and existing git history."
+
+        do_amend="$amend"
+        if [ "$amend" = false ] && [ -t 0 ]; then
+            echo ""
+            echo "How would you like to commit the setup changes?"
+            echo "  [C] New commit (Recommended: push with standard 'git push')"
+            echo "  [a] Amend initial commit (Creates a single clean root commit, requires 'git push --force')"
+            read -rp "Choose commit mode [C/a]: " choice
+            if [[ "$choice" =~ ^[aA] ]]; then
+                do_amend=true
+            fi
+        fi
+
+        git add .
+        if [ "$do_amend" = true ]; then
+            git commit --amend -m "Initial commit for $project_name"
+            echo "Amended initial commit. To push your changes, run:"
+            echo "  git push --force"
+        else
+            git commit -m "Initialize project $project_name from template"
+            echo "Committed setup changes. To push your changes, run:"
+            echo "  git push"
+        fi
+    fi
 fi
 
 # Self-cleanup option
 if [ "$cleanup" = false ] && [ -t 0 ]; then
+    echo ""
     read -rp "Do you want to delete the setup scripts now? [Y/n] " reply
     if [[ -z "$reply" || "$reply" =~ ^[yY] ]]; then
         cleanup=true
@@ -200,9 +260,9 @@ if [ "$cleanup" = true ]; then
     echo "Cleaning up setup scripts..."
     rm -f script/setup_project.sh script/setup_project.ps1
     rmdir script 2>/dev/null || true
-    if [ -d ".git" ]; then
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         git add -A
-        git commit -m "Remove setup scripts" --amend --no-edit >/dev/null 2>&1 || true
+        git commit --amend --no-edit >/dev/null 2>&1 || true
     fi
 fi
 

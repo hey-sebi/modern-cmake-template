@@ -1,18 +1,21 @@
-#  Usage: setup_project.ps1 [<project_name>] [-Cleanup] [-NoGit]
+#  Usage: setup_project.ps1 [<project_name>] [-Cleanup] [-NoGit] [-Amend] [-ResetGit]
 #
 #  This script must be run on the repository's top level directory.
 #  It configures the template for your new project:
 #  - Replaces "replaceme" / "REPLACEME" / "Replaceme" across all project files.
 #  - Renames files and directories to match your project name.
 #  - Generates a fresh, project-specific README.md.
-#  - Re-initializes a clean Git repository with an initial commit.
+#  - Smart Git management: preserves remote if cloned via GitHub template,
+#    or re-initializes if directly cloned from modern-cmake-template.
 #  - Offers to clean up the setup scripts.
 
 param (
     [Parameter(Position = 0)]
     [string]$ProjectName,
     [switch]$Cleanup,
-    [switch]$NoGit
+    [switch]$NoGit,
+    [switch]$Amend,
+    [switch]$ResetGit
 )
 
 $ErrorActionPreference = "Stop"
@@ -163,26 +166,71 @@ cmake --build --preset default --target format
 
 Set-Content -Path "README.md" -Value $readmeContent
 
-# Reset Git repository
+# Smart Git repository handling
 if (-not $NoGit) {
-    Write-Host "Re-initializing fresh Git repository..." -ForegroundColor Cyan
-    if (Test-Path ".git") {
-        Remove-Item -Path ".git" -Recurse -Force
+    $isGit = (Test-Path ".git")
+    $originUrl = ""
+    if ($isGit) {
+        try {
+            $originUrl = (git remote get-url origin 2>$null)
+        } catch {}
     }
-    try {
+
+    $isTemplateClone = ($originUrl -match "modern-cmake-template") -or ($ResetGit) -or (-not $originUrl)
+
+    if ($isTemplateClone -and -not (Test-Path ".git")) {
+        Write-Host "Initializing fresh Git repository..." -ForegroundColor Cyan
         git init -b main
         git add .
         git commit -m "Initial commit for $ProjectName"
         Write-Host "Git repository initialized on branch 'main'." -ForegroundColor Green
-    } catch {
-        Write-Warning "Could not initialize Git repository automatically: $_"
+    }
+    elseif ($isTemplateClone) {
+        Write-Host "Detected direct clone of modern-cmake-template. Re-initializing fresh Git repository..." -ForegroundColor Cyan
+        Remove-Item -Path ".git" -Recurse -Force
+        try {
+            git init -b main
+            git add .
+            git commit -m "Initial commit for $ProjectName"
+            Write-Host "Git repository initialized on branch 'main'." -ForegroundColor Green
+            Write-Host "`nTo link to your own GitHub repository:" -ForegroundColor Yellow
+            Write-Host "  git remote add origin <your-repo-url>" -ForegroundColor Yellow
+            Write-Host "  git push -u origin main" -ForegroundColor Yellow
+        } catch {
+            Write-Warning "Could not initialize Git repository automatically: $_"
+        }
+    } else {
+        Write-Host "Detected user repository cloned from GitHub template (origin: $originUrl)." -ForegroundColor Cyan
+        Write-Host "Preserving remote and existing git history." -ForegroundColor Green
+
+        $doAmend = $Amend
+        if (-not $Amend -and [Environment]::UserInteractive) {
+            Write-Host "`nHow would you like to commit the setup changes?"
+            Write-Host "  [C] New commit (Recommended: push with standard 'git push')"
+            Write-Host "  [a] Amend initial commit (Creates a single clean root commit, requires 'git push --force')"
+            $choice = Read-Host "Choose commit mode [C/a]"
+            if ($choice -match "^[aA]") {
+                $doAmend = $true
+            }
+        }
+
+        git add .
+        if ($doAmend) {
+            git commit --amend -m "Initial commit for $ProjectName"
+            Write-Host "Amended initial commit. To push your changes, run:" -ForegroundColor Yellow
+            Write-Host "  git push --force" -ForegroundColor Yellow
+        } else {
+            git commit -m "Initialize project $ProjectName from template"
+            Write-Host "Committed setup changes. To push your changes, run:" -ForegroundColor Green
+            Write-Host "  git push" -ForegroundColor Green
+        }
     }
 }
 
 # Self-cleanup option
 $doCleanup = $Cleanup
 if (-not $Cleanup -and [Environment]::UserInteractive) {
-    $reply = Read-Host "Do you want to delete the setup scripts now? [Y/n]"
+    $reply = Read-Host "`nDo you want to delete the setup scripts now? [Y/n]"
     if ($reply -eq "" -or $reply -match "^[yY]") {
         $doCleanup = $true
     }
@@ -191,12 +239,12 @@ if (-not $Cleanup -and [Environment]::UserInteractive) {
 if ($doCleanup) {
     Write-Host "Cleaning up setup scripts..."
     Remove-Item -Path "script/setup_project.ps1", "script/setup_project.sh" -Force -ErrorAction SilentlyContinue
-    if ((Get-ChildItem -Path "script" -Force | Measure-Object).Count -eq 0) {
+    if ((Get-ChildItem -Path "script" -Force -ErrorAction SilentlyContinue | Measure-Object).Count -eq 0) {
         Remove-Item -Path "script" -Force -ErrorAction SilentlyContinue
     }
     if (Test-Path ".git") {
         git add -A
-        git commit -m "Remove setup scripts" --amend --no-edit 2>$null
+        git commit --amend --no-edit 2>$null
     }
 }
 
